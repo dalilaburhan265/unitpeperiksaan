@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Unit Peperiksaan — PolyCC</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1e429f;
+      --primary-light: #ebf0ff;
+      --accent: #0e9f6e;
+      --accent-light: #def7ec;
+      --warn: #d97706;
+      --warn-light: #fef3c7;
+      --danger: #e02424;
+      --danger-light: #fde8e8;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --sidebar-bg: #1e3a5f;
+      --sidebar-hover: #2d5080;
+      --sidebar-active: #1a56db;
+    }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--sidebar-bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-header {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .sidebar-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      margin-top: 2px;
+    }
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.4);
+      padding: 10px 18px 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.75);
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s;
+      font-size: 13.5px;
+    }
+    .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+    .nav-item.active {
+      background: rgba(26,86,219,0.25);
+      border-left-color: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ── MAIN ── */
+    #main {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .badge-sem {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: var(--bg); }
+
+    /* ── CONTENT ── */
+    .content { padding: 24px; flex: 1; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── STATS CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .stat-value { font-size: 28px; font-weight: 700; margin: 4px 0 2px; }
+    .stat-sub { font-size: 11px; color: var(--muted); }
+    .stat-card.blue .stat-value { color: var(--primary); }
+    .stat-card.green .stat-value { color: var(--accent); }
+    .stat-card.orange .stat-value { color: var(--warn); }
+    .stat-card.red .stat-value { color: var(--danger); }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 24px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title { font-size: 15px; font-weight: 700; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: #f8fafc;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fafbfc; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-green { background: var(--accent-light); color: #065f46; }
+    .badge-blue  { background: var(--primary-light); color: var(--primary-dark); }
+    .badge-orange{ background: var(--warn-light); color: #92400e; }
+    .badge-red   { background: var(--danger-light); color: #991b1b; }
+    .badge-gray  { background: #f3f4f6; color: #374151; }
+
+    /* ── SEARCH / FILTER ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fafbfc;
+    }
+    .filter-bar input, .filter-bar select {
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--primary); }
+    .filter-bar input[type="text"] { min-width: 200px; }
+
+    /* ── MODAL ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none;
+      font-size: 20px; cursor: pointer;
+      color: var(--muted); line-height: 1;
+    }
+    .modal-body { padding: 22px; }
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .form-control {
+      width: 100%;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* ── CALENDAR MINI ── */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .cal-day-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+    .cal-day {
+      padding: 6px 2px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: default;
+    }
+    .cal-day.empty { background: none; }
+    .cal-day.has-exam { background: var(--primary-light); color: var(--primary-dark); font-weight: 700; cursor: pointer; }
+    .cal-day.today { background: var(--primary); color: #fff; font-weight: 700; }
+    .cal-day:not(.empty):not(.has-exam):not(.today) { background: #f8fafc; color: var(--muted); }
+
+    /* ── PROGRESS BAR ── */
+    .prog-bar { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .prog-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+    /* ── PENGAWAS CARDS ── */
+    .pengawas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .pengawas-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .pengawas-name { font-weight: 700; font-size: 14px; }
+    .pengawas-id { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+    .pengawas-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: var(--muted); }
+    .pengawas-row span:last-child { color: var(--text); font-weight: 600; }
+
+    /* ── BILIK ── */
+    .bilik-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .bilik-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .bilik-name { font-weight: 700; font-size: 15px; color: var(--primary); }
+    .bilik-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .bilik-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .bilik-card.tersedia { background: var(--accent-light); border-color: #6ee7b7; }
+    .bilik-card.digunakan { background: var(--warn-light); border-color: #fcd34d; }
+
+    @media (max-width: 1100px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .bilik-grid { grid-template-columns: repeat(2, 1fr); }
+      .pengawas-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">PolyCC</div>
+    <div class="sidebar-sub">Unit Peperiksaan</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-label">Menu Utama</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('jadual', this)">
+      <span class="nav-icon">📅</span> Jadual Peperiksaan
+    </div>
+    <div class="nav-item" onclick="showPage('bilik', this)">
+      <span class="nav-icon">🏫</span> Pengurusan Bilik
+    </div>
+    <div class="nav-item" onclick="showPage('pengawas', this)">
+      <span class="nav-icon">👤</span> Senarai Pengawas
+    </div>
+    <div class="nav-label">Lain-lain</div>
+    <div class="nav-item" onclick="showPage('laporan', this)">
+      <span class="nav-icon">📄</span> Laporan
+    </div>
+  </div>
+  <div class="sidebar-footer">Sesi 2024/2025 Sem 2</div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard Peperiksaan</div>
+    <div class="topbar-right">
+      <span class="badge-sem">Sem 2 · 2024/2025</span>
+      <button class="btn btn-primary" onclick="openModal()">+ Tambah Peperiksaan</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">Jumlah Peperiksaan</div>
+          <div class="stat-value">24</div>
+          <div class="stat-sub">Sesi 2024/2025 Sem 2</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Bilik Didaftarkan</div>
+          <div class="stat-value">12</div>
+          <div class="stat-sub">Kapasiti 1,440 pelajar</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Pengawas Aktif</div>
+          <div class="stat-value">38</div>
+          <div class="stat-sub">Staf akademik & tutor</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Konflik Jadual</div>
+          <div class="stat-value">2</div>
+          <div class="stat-sub">Perlu diselesaikan</div>
+        </div>
+      </div>
+
+      <!-- Mini Calendar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="card section">
+          <div style="padding:16px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;">
+            📅 Kalender Peperiksaan — Januari 2025
+          </div>
+          <div style="padding:16px 18px;">
+            <div class="cal-grid" id="cal-labels"></div>
+            <div class="cal-grid" id="cal-days"></div>
+          </div>
+        </div>
+
+        <!-- Upcoming exams -->
+        <div class="card section">
+          <div style="padding:16px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;">
+            🔔 Peperiksaan Akan Datang
+          </div>
+          <div id="upcoming-list" style="padding:0;"></div>
+        </div>
+      </div>
+
+      <!-- Penggunaan bilik chart -->
+      <div class="card section">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;">
+          📊 Penggunaan Bilik Peperiksaan
+        </div>
+        <div style="padding:18px 20px;" id="bilik-chart"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: JADUAL -->
+    <div class="page" id="page-jadual">
+      <div class="card section">
+        <div class="filter-bar">
+          <input type="text" id="cari-jadual" placeholder="🔍  Cari subjek / kod..." oninput="filterJadual()" />
+          <select id="filter-hari" onchange="filterJadual()">
+            <option value="">Semua Hari</option>
+            <option>Isnin</option>
+            <option>Selasa</option>
+            <option>Rabu</option>
+            <option>Khamis</option>
+            <option>Jumaat</option>
+          </select>
+          <select id="filter-sesi" onchange="filterJadual()">
+            <option value="">Semua Sesi</option>
+            <option>Pagi</option>
+            <option>Petang</option>
+          </select>
+          <button class="btn btn-primary" onclick="openModal()" style="margin-left:auto;">+ Tambah</button>
+        </div>
+        <div class="table-wrap">
+          <table id="jadual-table">
+            <thead>
+              <tr>
+                <th>Bil</th>
+                <th>Kod Subjek</th>
+                <th>Nama Subjek</th>
+                <th>Tarikh</th>
+                <th>Hari</th>
+                <th>Masa</th>
+                <th>Bilik</th>
+                <th>Pengawas Ketua</th>
+                <th>Pengawas 2</th>
+                <th>Pelajar</th>
+                <th>Status</th>
+                <th>Tindakan</th>
+              </tr>
+            </thead>
+            <tbody id="jadual-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: BILIK -->
+    <div class="page" id="page-bilik">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Pengurusan Bilik Peperiksaan</div>
+          <button class="btn btn-primary">+ Tambah Bilik</button>
+        </div>
+        <div class="bilik-grid" id="bilik-grid"></div>
+      </div>
+      <div class="card">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);font-weight:700;">Butiran Kapasiti Bilik</div>
+        <div class="table-wrap">
+          <table id="bilik-table">
+            <thead>
+              <tr>
+                <th>Bilik</th>
+                <th>Blok</th>
+                <th>Kapasiti</th>
+                <th>Jenis</th>
+                <th>Kelengkapan</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="bilik-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: PENGAWAS -->
+    <div class="page" id="page-pengawas">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Senarai Pengawas Peperiksaan</div>
+          <button class="btn btn-primary">+ Daftarkan Pengawas</button>
+        </div>
+        <div class="pengawas-grid" id="pengawas-grid"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: LAPORAN -->
+    <div class="page" id="page-laporan">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">Subjek Diperiksa</div>
+          <div class="stat-value">24</div>
+          <div class="stat-sub">Sem 2 · 2024/2025</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Jumlah Kertas Dicetak</div>
+          <div class="stat-value">3,210</div>
+          <div class="stat-sub">Anggaran</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Sesi Pagi</div>
+          <div class="stat-value">14</div>
+          <div class="stat-sub">8:00 am – 11:00 am</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Sesi Petang</div>
+          <div class="stat-value">10</div>
+          <div class="stat-sub">2:30 pm – 5:30 pm</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);font-weight:700;">Ringkasan Penggunaan Pengawas</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pengawas</th>
+                <th>Jabatan</th>
+                <th>Bilangan Tugasan</th>
+                <th>Peratusan Beban</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="laporan-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .content -->
+</div><!-- #main -->
+
+<!-- MODAL TAMBAH PEPERIKSAAN -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Tambah Peperiksaan Baru</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kod Subjek</label>
+          <input class="form-control" placeholder="cth: BEE2043" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nama Subjek</label>
+          <input class="form-control" placeholder="cth: Matematik Kejuruteraan" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tarikh</label>
+          <input type="date" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Masa</label>
+          <select class="form-control">
+            <option>8:00 pagi – 11:00 pagi</option>
+            <option>2:30 ptg – 5:30 ptg</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Bilik</label>
+          <select class="form-control" id="modal-bilik">
+            <option>DK1</option><option>DK2</option><option>DK3</option>
+            <option>DK4</option><option>DK5</option><option>Makmal A</option>
+            <option>Makmal B</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bilangan Pelajar</label>
+          <input type="number" class="form-control" placeholder="cth: 120" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Pengawas Ketua</label>
+          <select class="form-control" id="modal-pk"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pengawas 2</label>
+          <select class="form-control" id="modal-p2"></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="closeModal()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const PENGAWAS = [
+  { id:"P001", nama:"Dr. Hafizuddin Ramli",    jabatan:"Kejuruteraan Awam",    tugasan:5, status:"Aktif" },
+  { id:"P002", nama:"Pn. Norzaharah Mohd Nor", jabatan:"Perdagangan",          tugasan:4, status:"Aktif" },
+  { id:"P003", nama:"En. Shahril Azizi",        jabatan:"Kejuruteraan Elektrik",tugasan:6, status:"Aktif" },
+  { id:"P004", nama:"Dr. Faizah Ramli",         jabatan:"Sains Komputer",       tugasan:3, status:"Aktif" },
+  { id:"P005", nama:"Pn. Rosnani Hamzah",       jabatan:"Perakaunan",           tugasan:5, status:"Aktif" },
+  { id:"P006", nama:"En. Mohd Azri Nasir",      jabatan:"Kejuruteraan Mekanikal",tugasan:4, status:"Aktif" },
+  { id:"P007", nama:"Dr. Siti Hajar Md Ali",    jabatan:"Matematik",            tugasan:6, status:"Aktif" },
+  { id:"P008", nama:"En. Zulkifli Hassan",      jabatan:"Teknologi Maklumat",   tugasan:2, status:"Aktif" },
+  { id:"P009", nama:"Pn. Halimah Sulaiman",     jabatan:"Keselamatan & Kesihatan",tugasan:3, status:"Aktif" },
+];
+
+const BILIK = [
+  { nama:"DK 1",     blok:"Blok A", kapasiti:120, jenis:"Dewan Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+  { nama:"DK 2",     blok:"Blok A", kapasiti:120, jenis:"Dewan Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Digunakan" },
+  { nama:"DK 3",     blok:"Blok B", kapasiti:100, jenis:"Dewan Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+  { nama:"DK 4",     blok:"Blok B", kapasiti:100, jenis:"Dewan Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+  { nama:"DK 5",     blok:"Blok C", kapasiti:80,  jenis:"Dewan Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+  { nama:"Makmal A", blok:"Blok D", kapasiti:40,  jenis:"Makmal Komputer",kelengkapan:"PC + Meja",              status:"Tersedia" },
+  { nama:"Makmal B", blok:"Blok D", kapasiti:40,  jenis:"Makmal Komputer",kelengkapan:"PC + Meja",              status:"Digunakan" },
+  { nama:"Makmal C", blok:"Blok E", kapasiti:30,  jenis:"Makmal Sains",  kelengkapan:"Meja Lab + Peralatan",    status:"Tersedia" },
+  { nama:"Dewan 1",  blok:"Blok F", kapasiti:300, jenis:"Dewan Besar",   kelengkapan:"Meja lipat + Kerusi",     status:"Tersedia" },
+  { nama:"Dewan 2",  blok:"Blok F", kapasiti:300, jenis:"Dewan Besar",   kelengkapan:"Meja lipat + Kerusi",     status:"Tersedia" },
+  { nama:"BK 101",   blok:"Blok G", kapasiti:50,  jenis:"Bilik Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+  { nama:"BK 102",   blok:"Blok G", kapasiti:50,  jenis:"Bilik Kuliah",  kelengkapan:"Meja + Kerusi bertulis",  status:"Tersedia" },
+];
+
+const JADUAL = [
+  { kod:"BEE2043", subjek:"Matematik Kejuruteraan",       tarikh:"2025-01-06", hari:"Isnin",  masa:"Pagi",  bilik:"Dewan 1", pk:"P003", p2:"P007", pelajar:210, status:"Sahih" },
+  { kod:"BAA3023", subjek:"Perakaunan Kewangan",          tarikh:"2025-01-06", hari:"Isnin",  masa:"Petang",bilik:"DK 1",   pk:"P002", p2:"P005", pelajar:98,  status:"Sahih" },
+  { kod:"BCS2013", subjek:"Pengaturcaraan Asas",          tarikh:"2025-01-07", hari:"Selasa", masa:"Pagi",  bilik:"Makmal A",pk:"P004",p2:"P008", pelajar:38,  status:"Sahih" },
+  { kod:"BCW3053", subjek:"Teknologi Web",                tarikh:"2025-01-07", hari:"Selasa", masa:"Petang",bilik:"Makmal B",pk:"P008",p2:"P004", pelajar:35,  status:"Sahih" },
+  { kod:"BEC2063", subjek:"Litar Elektronik",             tarikh:"2025-01-08", hari:"Rabu",   masa:"Pagi",  bilik:"DK 2",   pk:"P003", p2:"P006", pelajar:105, status:"Konflik" },
+  { kod:"BAB3043", subjek:"Pengurusan Perniagaan",        tarikh:"2025-01-08", hari:"Rabu",   masa:"Pagi",  bilik:"DK 2",   pk:"P002", p2:"P009", pelajar:88,  status:"Konflik" },
+  { kod:"BCM2023", subjek:"Matematik Diskret",            tarikh:"2025-01-09", hari:"Khamis", masa:"Pagi",  bilik:"DK 3",   pk:"P007", p2:"P001", pelajar:95,  status:"Sahih" },
+  { kod:"BAA2033", subjek:"Ekonomi Mikro",                tarikh:"2025-01-09", hari:"Khamis", masa:"Petang",bilik:"DK 4",   pk:"P005", p2:"P002", pelajar:75,  status:"Sahih" },
+  { kod:"BEK3073", subjek:"Kawalan Sistem",               tarikh:"2025-01-10", hari:"Jumaat", masa:"Pagi",  bilik:"DK 5",   pk:"P006", p2:"P003", pelajar:62,  status:"Sahih" },
+  { kod:"BCS3083", subjek:"Pangkalan Data",               tarikh:"2025-01-10", hari:"Jumaat", masa:"Petang",bilik:"Makmal A",pk:"P004",p2:"P008", pelajar:40,  status:"Sahih" },
+  { kod:"BCW2043", subjek:"Rangkaian Komputer",           tarikh:"2025-01-13", hari:"Isnin",  masa:"Pagi",  bilik:"Makmal B",pk:"P008",p2:"P007", pelajar:32,  status:"Sahih" },
+  { kod:"BAA3063", subjek:"Pengurusan Kewangan",          tarikh:"2025-01-13", hari:"Isnin",  masa:"Petang",bilik:"DK 1",   pk:"P005", p2:"P002", pelajar:90,  status:"Sahih" },
+  { kod:"BEC3093", subjek:"Pemprosesan Isyarat Digital",  tarikh:"2025-01-14", hari:"Selasa", masa:"Pagi",  bilik:"DK 2",   pk:"P003", p2:"P007", pelajar:55,  status:"Sahih" },
+  { kod:"BCS2043", subjek:"Struktur Data",                tarikh:"2025-01-14", hari:"Selasa", masa:"Petang",bilik:"Makmal A",pk:"P004",p2:"P008", pelajar:38,  status:"Sahih" },
+  { kod:"BCM3053", subjek:"Statistik Gunaan",             tarikh:"2025-01-15", hari:"Rabu",   masa:"Pagi",  bilik:"DK 3",   pk:"P007", p2:"P001", pelajar:80,  status:"Sahih" },
+];
+
+// ── RENDER HELPERS ───────────────────────────────────────────────────
+function statusBadge(s) {
+  if (s === "Sahih")   return `<span class="badge badge-green">Sahih</span>`;
+  if (s === "Konflik") return `<span class="badge badge-red">Konflik</span>`;
+  if (s === "Tersedia")return `<span class="badge badge-green">Tersedia</span>`;
+  if (s === "Digunakan")return `<span class="badge badge-orange">Digunakan</span>`;
+  if (s === "Aktif")   return `<span class="badge badge-blue">Aktif</span>`;
+  return `<span class="badge badge-gray">${s}</span>`;
+}
+
+function getPengawasNama(id) {
+  const p = PENGAWAS.find(x => x.id === id);
+  return p ? p.nama.split(' ').slice(0,2).join(' ') : id;
+}
+
+// ── JADUAL TABLE ─────────────────────────────────────────────────────
+function renderJadual(data) {
+  const tbody = document.getElementById('jadual-tbody');
+  tbody.innerHTML = data.map((r, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">${r.kod}</code></td>
+      <td style="font-weight:600;">${r.subjek}</td>
+      <td>${r.tarikh}</td>
+      <td>${r.hari}</td>
+      <td><span class="badge ${r.masa==='Pagi'?'badge-blue':'badge-orange'}">${r.masa==='Pagi'?'🌅 Pagi':'🌇 Petang'}</span></td>
+      <td>${r.bilik}</td>
+      <td style="font-size:12px;">${getPengawasNama(r.pk)}</td>
+      <td style="font-size:12px;">${getPengawasNama(r.p2)}</td>
+      <td>${r.pelajar}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:12px;">✏️ Edit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterJadual() {
+  const q = document.getElementById('cari-jadual').value.toLowerCase();
+  const hari = document.getElementById('filter-hari').value;
+  const sesi = document.getElementById('filter-sesi').value;
+  const filtered = JADUAL.filter(r => {
+    const matchQ = !q || r.kod.toLowerCase().includes(q) || r.subjek.toLowerCase().includes(q);
+    const matchH = !hari || r.hari === hari;
+    const matchS = !sesi || r.masa === sesi;
+    return matchQ && matchH && matchS;
+  });
+  renderJadual(filtered);
+}
+
+// ── BILIK ────────────────────────────────────────────────────────────
+function renderBilik() {
+  const grid = document.getElementById('bilik-grid');
+  grid.innerHTML = BILIK.map(b => `
+    <div class="bilik-card ${b.status==='Tersedia'?'tersedia':'digunakan'}">
+      <div class="bilik-name">${b.nama}</div>
+      <div class="bilik-label">${b.blok}</div>
+      ${statusBadge(b.status)}
+      <div class="bilik-cap">👥 ${b.kapasiti} pelajar</div>
+    </div>
+  `).join('');
+
+  const tbody = document.getElementById('bilik-tbody');
+  tbody.innerHTML = BILIK.map(b => `
+    <tr>
+      <td style="font-weight:700;">${b.nama}</td>
+      <td>${b.blok}</td>
+      <td>${b.kapasiti}</td>
+      <td>${b.jenis}</td>
+      <td style="font-size:12px;color:var(--muted);">${b.kelengkapan}</td>
+      <td>${statusBadge(b.status)}</td>
+    </tr>
+  `).join('');
+}
+
+// ── PENGAWAS ─────────────────────────────────────────────────────────
+function renderPengawas() {
+  const grid = document.getElementById('pengawas-grid');
+  grid.innerHTML = PENGAWAS.map(p => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? '#e02424' : pct > 50 ? '#d97706' : '#0e9f6e';
+    return `
+    <div class="pengawas-card">
+      <div class="pengawas-name">${p.nama}</div>
+      <div class="pengawas-id">${p.id} · ${p.jabatan}</div>
+      <div class="pengawas-row"><span>Tugasan</span><span>${p.tugasan} sesi</span></div>
+      <div class="prog-bar" style="margin-bottom:8px;">
+        <div class="prog-bar-fill" style="width:${pct}%;background:${col};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        ${statusBadge(p.status)}
+        <span style="font-size:11px;color:var(--muted);">Beban: ${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LAPORAN ──────────────────────────────────────────────────────────
+function renderLaporan() {
+  const tbody = document.getElementById('laporan-tbody');
+  tbody.innerHTML = PENGAWAS.map(p => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? 'badge-red' : pct > 50 ? 'badge-orange' : 'badge-green';
+    const lbl = pct > 70 ? 'Tinggi' : pct > 50 ? 'Sederhana' : 'Rendah';
+    return `<tr>
+      <td style="font-weight:600;">${p.nama}</td>
+      <td style="font-size:12px;color:var(--muted);">${p.jabatan}</td>
+      <td>${p.tugasan}</td>
+      <td>
+        <div class="prog-bar" style="width:120px;">
+          <div class="prog-bar-fill" style="width:${pct}%;background:${pct>70?'#e02424':pct>50?'#d97706':'#0e9f6e'};"></div>
+        </div>
+      </td>
+      <td><span class="badge ${col}">${lbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CALENDAR ─────────────────────────────────────────────────────────
+function renderCalendar() {
+  const labels = ['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
+  document.getElementById('cal-labels').innerHTML = labels.map(l =>
+    `<div class="cal-day-label">${l}</div>`).join('');
+
+  const examDays = [...new Set(JADUAL.map(j => parseInt(j.tarikh.split('-')[2])))];
+  // Jan 2025: starts Wednesday (day 3)
+  const startDay = 3;
+  const totalDays = 31;
+  let cells = '';
+  for (let i = 0; i < startDay; i++) cells += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= totalDays; d++) {
+    const hasExam = examDays.includes(d);
+    const isToday = d === 15; // mock today
+    const cls = isToday ? 'today' : hasExam ? 'has-exam' : '';
+    cells += `<div class="cal-day ${cls}" title="${hasExam?'Ada peperiksaan':''}">${d}</div>`;
+  }
+  document.getElementById('cal-days').innerHTML = cells;
+}
+
+// ── UPCOMING ─────────────────────────────────────────────────────────
+function renderUpcoming() {
+  const upcoming = JADUAL.slice(0, 5);
+  const list = document.getElementById('upcoming-list');
+  list.innerHTML = upcoming.map(r => `
+    <div style="display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);">
+      <div style="width:40px;height:40px;background:var(--primary-light);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📋</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.subjek}</div>
+        <div style="font-size:11px;color:var(--muted);">${r.tarikh} · ${r.hari} · ${r.masa}</div>
+      </div>
+      <div>${statusBadge(r.status)}</div>
+    </div>
+  `).join('');
+}
+
+// ── BILIK CHART BARS ─────────────────────────────────────────────────
+function renderBilikChart() {
+  const rooms = BILIK.slice(0, 8);
+  const max = Math.max(...rooms.map(b => b.kapasiti));
+  const chart = document.getElementById('bilik-chart');
+  chart.innerHTML = rooms.map(b => {
+    const pct = Math.round(b.kapasiti / max * 100);
+    const col = b.status === 'Digunakan' ? '#d97706' : '#1a56db';
+    return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="width:90px;font-size:12px;font-weight:600;text-align:right;color:var(--muted);">${b.nama}</div>
+      <div style="flex:1;background:#f3f4f6;border-radius:4px;height:22px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${col};border-radius:4px;display:flex;align-items:center;padding:0 8px;">
+          <span style="color:#fff;font-size:11px;font-weight:700;">${b.kapasiti}</span>
+        </div>
+      </div>
+      <div style="width:70px;">${statusBadge(b.status)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────
+function openModal() {
+  const pk = document.getElementById('modal-pk');
+  const p2 = document.getElementById('modal-p2');
+  if (!pk.options.length) {
+    PENGAWAS.forEach(p => {
+      pk.add(new Option(p.nama, p.id));
+      p2.add(new Option(p.nama, p.id));
+    });
+  }
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────
+const PAGE_TITLES = {
+  dashboard: "Dashboard Peperiksaan",
+  jadual:    "Jadual Peperiksaan",
+  bilik:     "Pengurusan Bilik",
+  pengawas:  "Senarai Pengawas",
+  laporan:   "Laporan",
+};
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[id];
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+renderJadual(JADUAL);
+renderBilik();
+renderPengawas();
+renderLaporan();
+renderCalendar();
+renderUpcoming();
+renderBilikChart();
+</script>
+</body>
+</html>

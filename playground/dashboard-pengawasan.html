@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="ms" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Pemantauan Pengawasan Peperiksaan</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --sidebar-width: 240px;
+      --sidebar-bg: #0d1117;
+      --sidebar-border: rgba(255,255,255,0.08);
+      --topbar-bg: #161b22;
+      --accent: #2f81f7;
+      --accent-glow: rgba(47,129,247,0.15);
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: rgba(255,255,255,0.08);
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --info: #58a6ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      background: #0d1117;
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+
+    .sidebar-logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-logo .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      padding-left: 42px;
+    }
+
+    .sidebar-nav { flex: 1; padding: 10px 0; }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      padding: 10px 18px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: var(--muted);
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      font-size: 13.5px;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--accent-glow);
+      border-left-color: var(--accent);
+      color: var(--info);
+      font-weight: 600;
+    }
+
+    .nav-item i { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--sidebar-border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      margin-right: 5px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── MAIN ── */
+    #main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--topbar-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+    .badge-sesi {
+      background: rgba(47,129,247,0.15);
+      color: var(--info);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid rgba(47,129,247,0.3);
+    }
+
+    .clock-display {
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── CONTENT ── */
+    .content { padding: 24px; flex: 1; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── STAT CARDS ── */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      border-radius: 12px 0 0 12px;
+    }
+
+    .stat-card.blue::before  { background: var(--accent); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.yellow::before{ background: var(--warning); }
+    .stat-card.red::before   { background: var(--danger); }
+
+    .stat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    .stat-icon.blue   { background: rgba(47,129,247,0.15);  color: var(--info); }
+    .stat-icon.green  { background: rgba(63,185,80,0.15);   color: var(--success); }
+    .stat-icon.yellow { background: rgba(210,153,34,0.15);  color: var(--warning); }
+    .stat-icon.red    { background: rgba(248,81,73,0.15);   color: var(--danger); }
+
+    .stat-value { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .stat-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 12px !important;
+    }
+
+    .card-header-custom {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ── TABLE ── */
+    .table {
+      font-size: 13px;
+      --bs-table-bg: transparent;
+      --bs-table-hover-bg: rgba(255,255,255,0.03);
+      --bs-table-border-color: var(--border);
+      --bs-table-striped-bg: transparent;
+      color: var(--text);
+    }
+
+    .table thead th {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border) !important;
+      padding: 10px 14px;
+    }
+
+    .table tbody td { padding: 11px 14px; vertical-align: middle; }
+
+    /* ── BADGES ── */
+    .badge-custom {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-green  { background: rgba(63,185,80,0.15);   color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+    .badge-blue   { background: rgba(47,129,247,0.15);  color: #58a6ff; border: 1px solid rgba(47,129,247,0.3); }
+    .badge-yellow { background: rgba(210,153,34,0.15);  color: #d29922; border: 1px solid rgba(210,153,34,0.3); }
+    .badge-red    { background: rgba(248,81,73,0.15);   color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+    .badge-gray   { background: rgba(139,148,158,0.15); color: #8b949e; border: 1px solid rgba(139,148,158,0.3); }
+    .badge-orange { background: rgba(220,100,0,0.15);   color: #e36209; border: 1px solid rgba(220,100,0,0.3); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .filter-bar .form-control,
+    .filter-bar .form-select {
+      font-size: 13px;
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .filter-bar .form-control:focus,
+    .filter-bar .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* ── PROGRESS ── */
+    .progress {
+      height: 7px;
+      background: var(--surface2);
+      border-radius: 4px;
+    }
+
+    /* ── MODAL ── */
+    .modal-content {
+      background: var(--surface) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 14px !important;
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--border) !important;
+      padding: 18px 22px;
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--border) !important;
+      padding: 14px 22px;
+    }
+
+    .form-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .form-control, .form-select {
+      background: var(--surface2) !important;
+      border-color: var(--border) !important;
+      color: var(--text) !important;
+      font-size: 13px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px var(--accent-glow) !important;
+    }
+
+    /* ── DEWAN CARDS ── */
+    .dewan-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      transition: border-color 0.2s;
+    }
+
+    .dewan-card.aktif {
+      border-color: rgba(63,185,80,0.4);
+      box-shadow: 0 0 0 1px rgba(63,185,80,0.1);
+    }
+
+    .dewan-card.bersedia {
+      border-color: rgba(47,129,247,0.4);
+    }
+
+    .dewan-card.selesai {
+      border-color: var(--border);
+      opacity: 0.7;
+    }
+
+    .dewan-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .dewan-name { font-size: 16px; font-weight: 700; }
+    .dewan-subjek { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .countdown {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--success);
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .countdown.warning { color: var(--warning); }
+    .countdown.danger  { color: var(--danger); }
+    .countdown.off     { color: var(--muted); font-size: 14px; }
+
+    .dewan-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 10px;
+    }
+
+    .dewan-meta span { display: flex; align-items: center; gap: 6px; }
+
+    /* ── PENGAWAS CARDS ── */
+    .pengawas-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .pengawas-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--info);
+      flex-shrink: 0;
+    }
+
+    /* ── CALENDAR ── */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      text-align: center;
+    }
+
+    .cal-day-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+
+    .cal-day {
+      padding: 7px 2px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: default;
+    }
+
+    .cal-day.empty { background: none; }
+    .cal-day.has-exam { background: rgba(47,129,247,0.2); color: var(--info); font-weight: 700; cursor: pointer; border: 1px solid rgba(47,129,247,0.3); }
+    .cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
+    .cal-day:not(.empty):not(.has-exam):not(.today) { background: var(--surface2); color: var(--muted); }
+
+    /* ── INSIDEN MINI STATS ── */
+    .insiden-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .insiden-stat .num { font-size: 26px; font-weight: 700; line-height: 1; }
+    .insiden-stat .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── CHART CONTAINERS ── */
+    .chart-container { position: relative; }
+
+    /* ── SCROLL ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+    @media (max-width: 1100px) {
+      :root { --sidebar-width: 200px; }
+    }
+
+    @media print {
+      #sidebar, .topbar, .btn, .filter-bar { display: none !important; }
+      #main { margin-left: 0 !important; }
+      body { background: #fff !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="bi bi-clipboard2-check-fill"></i></div>
+      <div>
+        <div>Peperiksaan</div>
+        <div class="sidebar-sub">Pemantauan Pengawasan</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Menu Utama</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <i class="bi bi-grid-1x2-fill"></i> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('dewan', this)">
+      <i class="bi bi-broadcast"></i> Pemantauan Dewan
+    </div>
+    <div class="nav-section-label">Pengurusan</div>
+    <div class="nav-item" onclick="showPage('pengawas', this)">
+      <i class="bi bi-people-fill"></i> Senarai Pengawas
+    </div>
+    <div class="nav-item" onclick="showPage('insiden', this)">
+      <i class="bi bi-exclamation-triangle-fill"></i> Pengurusan Insiden
+    </div>
+    <div class="nav-item" onclick="showPage('jadual', this)">
+      <i class="bi bi-calendar3"></i> Jadual Peperiksaan
+    </div>
+    <div class="nav-section-label">Analitik</div>
+    <div class="nav-item" onclick="showPage('laporan', this)">
+      <i class="bi bi-bar-chart-fill"></i> Laporan
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div><span class="live-dot"></span>Sistem Aktif</div>
+    <div style="margin-top:4px;">Sesi 2024/2025 Sem 2</div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">
+      <i class="bi bi-grid-1x2-fill me-2"></i>Dashboard Peperiksaan
+    </div>
+    <div class="topbar-right">
+      <span class="clock-display" id="clock-display"></span>
+      <span class="badge-sesi">Sem 2 · 2024/2025</span>
+      <button class="btn btn-sm btn-danger" onclick="bukaModalInsiden()">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Log Insiden
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard"></div>
+
+    <!-- PAGE: DEWAN -->
+    <div class="page" id="page-dewan"></div>
+
+    <!-- PAGE: PENGAWAS -->
+    <div class="page" id="page-pengawas"></div>
+
+    <!-- PAGE: INSIDEN -->
+    <div class="page" id="page-insiden"></div>
+
+    <!-- PAGE: JADUAL -->
+    <div class="page" id="page-jadual"></div>
+
+    <!-- PAGE: LAPORAN -->
+    <div class="page" id="page-laporan"></div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL LOG INSIDEN ══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalInsiden" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Log Insiden Baharu</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Dewan / Bilik</label>
+            <select class="form-select" id="ins-dewan"></select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Kategori Insiden</label>
+            <select class="form-select" id="ins-kategori">
+              <option value="Kecurangan">🔴 Kecurangan / Plagiat</option>
+              <option value="Kesihatan">🟠 Masalah Kesihatan</option>
+              <option value="Teknikal">🟡 Teknikal</option>
+              <option value="Kehadiran">🔵 Calon Lewat / Tidak Hadir</option>
+              <option value="Lain-lain">⚫ Lain-lain</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Penerangan Insiden</label>
+            <textarea class="form-control" id="ins-penerangan" rows="3" placeholder="Huraikan insiden dengan ringkas..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Dilaporkan Oleh</label>
+            <input class="form-control" id="ins-pelapor" placeholder="Nama pengawas / staf" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-danger" onclick="submitInsiden()">
+          <i class="bi bi-send-fill me-1"></i>Hantar Laporan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL BUTIRAN DEWAN ══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalDewan" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-dewan-title">Butiran Dewan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4" id="modal-dewan-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL TAMBAH JADUAL ══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalJadual" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Tambah Peperiksaan Baharu</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Kod Subjek</label>
+            <input class="form-control" id="jad-kod" placeholder="cth: BEE2043" />
+          </div>
+          <div class="col-6">
+            <label class="form-label">Nama Subjek</label>
+            <input class="form-control" id="jad-subjek" placeholder="cth: Matematik Kejuruteraan" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Tarikh</label>
+            <input type="date" class="form-control" id="jad-tarikh" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Sesi</label>
+            <select class="form-select" id="jad-masa">
+              <option value="Pagi">🌅 Pagi (8:00 — 11:00)</option>
+              <option value="Petang">🌇 Petang (2:30 — 5:30)</option>
+            </select>
+          </div>
+          <div class="col-4">
+            <label class="form-label">Bilangan Pelajar</label>
+            <input type="number" class="form-control" id="jad-pelajar" placeholder="cth: 120" />
+          </div>
+          <div class="col-4">
+            <label class="form-label">Dewan / Bilik</label>
+            <select class="form-select" id="jad-dewan"></select>
+          </div>
+          <div class="col-4">
+            <label class="form-label">Pengawas Ketua</label>
+            <select class="form-select" id="jad-pk"></select>
+          </div>
+          <div class="col-4">
+            <label class="form-label">Pengawas 2</label>
+            <select class="form-select" id="jad-p2"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary" onclick="submitJadual()">
+          <i class="bi bi-check-circle-fill me-1"></i>Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA MOCK
+// ══════════════════════════════════════════════════════════
+
+const DEWAN = [
+  { id:"D1", nama:"Dewan 1",    blok:"Blok F", kapasiti:300, jenis:"Dewan Besar",    subjek:"Matematik Kejuruteraan",    kod:"BEE2043", masaMula:"08:00", masaTamat:"11:00", calonDaftar:210, calonHadir:205, pk:"P003", p2:"P007", status:"Aktif" },
+  { id:"D2", nama:"Dewan 2",    blok:"Blok F", kapasiti:300, jenis:"Dewan Besar",    subjek:"Perakaunan Kewangan",        kod:"BAA3023", masaMula:"08:00", masaTamat:"11:00", calonDaftar:98,  calonHadir:95,  pk:"P002", p2:"P005", status:"Aktif" },
+  { id:"DK1",nama:"DK 1",       blok:"Blok A", kapasiti:120, jenis:"Dewan Kuliah",   subjek:"Litar Elektronik",           kod:"BEC2063", masaMula:"14:30", masaTamat:"17:30", calonDaftar:105, calonHadir:0,   pk:"P003", p2:"P006", status:"Bersedia" },
+  { id:"DK2",nama:"DK 2",       blok:"Blok A", kapasiti:120, jenis:"Dewan Kuliah",   subjek:"Statistik Gunaan",           kod:"BCM3053", masaMula:"14:30", masaTamat:"17:30", calonDaftar:80,  calonHadir:0,   pk:"P007", p2:"P001", status:"Bersedia" },
+  { id:"MA", nama:"Makmal A",   blok:"Blok D", kapasiti:40,  jenis:"Makmal Komputer",subjek:"Pengaturcaraan Asas",         kod:"BCS2013", masaMula:"08:00", masaTamat:"11:00", calonDaftar:38,  calonHadir:38,  pk:"P004", p2:"P008", status:"Selesai" },
+  { id:"MB", nama:"Makmal B",   blok:"Blok D", kapasiti:40,  jenis:"Makmal Komputer",subjek:"Teknologi Web",               kod:"BCW3053", masaMula:"08:00", masaTamat:"10:00", calonDaftar:35,  calonHadir:34,  pk:"P008", p2:"P004", status:"Selesai" },
+];
+
+const PENGAWAS = [
+  { id:"P001", nama:"Dr. Hafizuddin Ramli",     jabatan:"Kejuruteraan Awam",         tugasan:5, status:"Aktif" },
+  { id:"P002", nama:"Pn. Norzaharah Mohd Nor",  jabatan:"Perdagangan",               tugasan:4, status:"Aktif" },
+  { id:"P003", nama:"En. Shahril Azizi",         jabatan:"Kejuruteraan Elektrik",     tugasan:6, status:"Aktif" },
+  { id:"P004", nama:"Dr. Faizah Ramli",          jabatan:"Sains Komputer",            tugasan:3, status:"Aktif" },
+  { id:"P005", nama:"Pn. Rosnani Hamzah",        jabatan:"Perakaunan",                tugasan:5, status:"Aktif" },
+  { id:"P006", nama:"En. Mohd Azri Nasir",       jabatan:"Kejuruteraan Mekanikal",    tugasan:4, status:"Aktif" },
+  { id:"P007", nama:"Dr. Siti Hajar Md Ali",     jabatan:"Matematik",                 tugasan:6, status:"Aktif" },
+  { id:"P008", nama:"En. Zulkifli Hassan",        jabatan:"Teknologi Maklumat",        tugasan:2, status:"Aktif" },
+  { id:"P009", nama:"Pn. Halimah Sulaiman",      jabatan:"Keselamatan & Kesihatan",   tugasan:3, status:"Aktif" },
+];
+
+const JADUAL = [
+  { kod:"BEE2043", subjek:"Matematik Kejuruteraan",       tarikh:"2025-01-06", hari:"Isnin",  masa:"Pagi",  dewan:"Dewan 1", pk:"P003", p2:"P007", pelajar:210, status:"Sahih" },
+  { kod:"BAA3023", subjek:"Perakaunan Kewangan",          tarikh:"2025-01-06", hari:"Isnin",  masa:"Pagi",  dewan:"Dewan 2", pk:"P002", p2:"P005", pelajar:98,  status:"Sahih" },
+  { kod:"BCS2013", subjek:"Pengaturcaraan Asas",          tarikh:"2025-01-07", hari:"Selasa", masa:"Pagi",  dewan:"Makmal A",pk:"P004", p2:"P008", pelajar:38,  status:"Sahih" },
+  { kod:"BCW3053", subjek:"Teknologi Web",                tarikh:"2025-01-07", hari:"Selasa", masa:"Petang",dewan:"Makmal B",pk:"P008", p2:"P004", pelajar:35,  status:"Sahih" },
+  { kod:"BEC2063", subjek:"Litar Elektronik",             tarikh:"2025-01-08", hari:"Rabu",   masa:"Pagi",  dewan:"DK 2",   pk:"P003", p2:"P006", pelajar:105, status:"Konflik" },
+  { kod:"BAB3043", subjek:"Pengurusan Perniagaan",        tarikh:"2025-01-08", hari:"Rabu",   masa:"Pagi",  dewan:"DK 2",   pk:"P002", p2:"P009", pelajar:88,  status:"Konflik" },
+  { kod:"BCM2023", subjek:"Matematik Diskret",            tarikh:"2025-01-09", hari:"Khamis", masa:"Pagi",  dewan:"DK 3",   pk:"P007", p2:"P001", pelajar:95,  status:"Sahih" },
+  { kod:"BAA2033", subjek:"Ekonomi Mikro",                tarikh:"2025-01-09", hari:"Khamis", masa:"Petang",dewan:"DK 4",   pk:"P005", p2:"P002", pelajar:75,  status:"Sahih" },
+  { kod:"BEK3073", subjek:"Kawalan Sistem",               tarikh:"2025-01-10", hari:"Jumaat", masa:"Pagi",  dewan:"DK 5",   pk:"P006", p2:"P003", pelajar:62,  status:"Sahih" },
+  { kod:"BCS3083", subjek:"Pangkalan Data",               tarikh:"2025-01-10", hari:"Jumaat", masa:"Petang",dewan:"Makmal A",pk:"P004",p2:"P008", pelajar:40,  status:"Sahih" },
+  { kod:"BCW2043", subjek:"Rangkaian Komputer",           tarikh:"2025-01-13", hari:"Isnin",  masa:"Pagi",  dewan:"Makmal B",pk:"P008",p2:"P007", pelajar:32,  status:"Sahih" },
+  { kod:"BAA3063", subjek:"Pengurusan Kewangan",          tarikh:"2025-01-13", hari:"Isnin",  masa:"Petang",dewan:"DK 1",   pk:"P005", p2:"P002", pelajar:90,  status:"Sahih" },
+  { kod:"BEC3093", subjek:"Pemprosesan Isyarat Digital",  tarikh:"2025-01-14", hari:"Selasa", masa:"Pagi",  dewan:"DK 2",   pk:"P003", p2:"P007", pelajar:55,  status:"Sahih" },
+  { kod:"BCS2043", subjek:"Struktur Data",                tarikh:"2025-01-14", hari:"Selasa", masa:"Petang",dewan:"Makmal A",pk:"P004",p2:"P008", pelajar:38,  status:"Sahih" },
+  { kod:"BCM3053", subjek:"Statistik Gunaan",             tarikh:"2025-01-15", hari:"Rabu",   masa:"Pagi",  dewan:"DK 3",   pk:"P007", p2:"P001", pelajar:80,  status:"Sahih" },
+];
+
+let INSIDEN = [
+  { id:"I001", masa:"2025-01-06 08:42", dewan:"Dewan 1",  kategori:"Kecurangan", penerangan:"Calon didapati menyembunyikan nota dalam beg", pelapor:"En. Shahril Azizi", status:"Dalam Semakan" },
+  { id:"I002", masa:"2025-01-06 09:15", dewan:"Dewan 2",  kategori:"Kesihatan",  penerangan:"Calon pengsan di dalam dewan semasa peperiksaan berlangsung", pelapor:"Pn. Norzaharah", status:"Selesai" },
+  { id:"I003", masa:"2025-01-06 08:05", dewan:"Makmal A", kategori:"Teknikal",   penerangan:"2 unit komputer tidak dapat dihidupkan — calon dipindahkan", pelapor:"Dr. Faizah Ramli", status:"Selesai" },
+  { id:"I004", masa:"2025-01-07 08:30", dewan:"Makmal B", kategori:"Kehadiran",  penerangan:"5 calon lewat lebih 30 minit, dibenarkan masuk dengan syarat", pelapor:"En. Zulkifli Hassan", status:"Selesai" },
+  { id:"I005", masa:"2025-01-08 09:00", dewan:"DK 2",     kategori:"Kecurangan", penerangan:"Calon cuba menghantar foto kertas soalan menggunakan telefon pintar", pelapor:"En. Shahril Azizi", status:"Baru" },
+  { id:"I006", masa:"2025-01-09 14:45", dewan:"DK 4",     kategori:"Teknikal",   penerangan:"Penghawa dingin rosak — suhu dewan meningkat", pelapor:"Pn. Rosnani Hamzah", status:"Baru" },
+  { id:"I007", masa:"2025-01-10 15:20", dewan:"DK 5",     kategori:"Kehadiran",  penerangan:"3 calon tidak hadir tanpa sebarang notis", pelapor:"En. Mohd Azri Nasir", status:"Selesai" },
+  { id:"I008", masa:"2025-01-13 08:50", dewan:"Makmal B", kategori:"Lain-lain",  penerangan:"Kertas soalan kurang — 2 set perlu dicetak semula", pelapor:"En. Zulkifli Hassan", status:"Dalam Semakan" },
+];
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+
+function getNamaPengawas(id) {
+  const p = PENGAWAS.find(x => x.id === id);
+  return p ? p.nama : id;
+}
+
+function getInitials(nama) {
+  return nama.split(' ').filter(w => w.length > 1).slice(0,2).map(w => w[0]).join('');
+}
+
+function statusBadge(s) {
+  const map = {
+    "Sahih":          "badge-custom badge-green",
+    "Konflik":        "badge-custom badge-red",
+    "Aktif":          "badge-custom badge-green",
+    "Bersedia":       "badge-custom badge-blue",
+    "Selesai":        "badge-custom badge-gray",
+    "Tersedia":       "badge-custom badge-green",
+    "Digunakan":      "badge-custom badge-yellow",
+    "Baru":           "badge-custom badge-red",
+    "Dalam Semakan":  "badge-custom badge-yellow",
+  };
+  return `<span class="${map[s] || 'badge-custom badge-gray'}">${s}</span>`;
+}
+
+function insideBadge(kat) {
+  const map = {
+    "Kecurangan": "badge-custom badge-red",
+    "Kesihatan":  "badge-custom badge-orange",
+    "Teknikal":   "badge-custom badge-yellow",
+    "Kehadiran":  "badge-custom badge-blue",
+    "Lain-lain":  "badge-custom badge-gray",
+  };
+  return `<span class="${map[kat] || 'badge-custom badge-gray'}">${kat}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: DASHBOARD
+// ══════════════════════════════════════════════════════════
+
+function renderDashboard() {
+  const dewanAktif = DEWAN.filter(d => d.status === "Aktif").length;
+  const totalCalon = DEWAN.filter(d => d.status === "Aktif").reduce((a, d) => a + d.calonHadir, 0);
+  const pengAwas = DEWAN.filter(d => d.status === "Aktif").length * 2;
+  const insidenAktif = INSIDEN.filter(i => i.status !== "Selesai").length;
+
+  // Calendar exam days
+  const examDays = [...new Set(JADUAL.map(j => parseInt(j.tarikh.split('-')[2])))];
+  const calLabels = ['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
+  let calHtml = calLabels.map(l => `<div class="cal-day-label">${l}</div>`).join('');
+  const startDay = 3; // Jan 2025 starts on Wednesday
+  for (let i = 0; i < startDay; i++) calHtml += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= 31; d++) {
+    const hasExam = examDays.includes(d);
+    const isToday = d === 6;
+    const cls = isToday ? 'today' : hasExam ? 'has-exam' : '';
+    calHtml += `<div class="cal-day ${cls}" title="${hasExam?'Ada peperiksaan':''}">${d}</div>`;
+  }
+
+  // Upcoming exams
+  const upcoming = JADUAL.slice(0, 5).map(r => `
+    <div class="d-flex align-items-center gap-3 px-3 py-2 border-bottom" style="border-color:var(--border)!important;">
+      <div style="width:38px;height:38px;background:var(--accent-glow);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-clipboard2-check" style="color:var(--info);"></i>
+      </div>
+      <div class="flex-grow-1" style="min-width:0;">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.subjek}</div>
+        <div style="font-size:11px;color:var(--muted);">${r.tarikh} · ${r.hari} · ${r.masa}</div>
+      </div>
+      ${statusBadge(r.status)}
+    </div>`).join('');
+
+  // Dewan bar chart
+  const dewanBars = DEWAN.slice(0, 6).map(d => {
+    const pct = Math.round(d.kapasiti / 300 * 100);
+    const col = d.status === 'Aktif' ? '#3fb950' : d.status === 'Bersedia' ? '#58a6ff' : '#8b949e';
+    return `
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div style="width:80px;font-size:12px;font-weight:600;text-align:right;color:var(--muted);">${d.nama}</div>
+      <div class="flex-grow-1">
+        <div class="progress">
+          <div class="progress-bar" style="width:${pct}%;background:${col};">&nbsp;</div>
+        </div>
+      </div>
+      <div style="width:40px;font-size:12px;text-align:right;color:var(--muted);">${d.kapasiti}</div>
+      ${statusBadge(d.status)}
+    </div>`;
+  }).join('');
+
+  document.getElementById('page-dashboard').innerHTML = `
+    <div class="row g-3 mb-4">
+      <div class="col-3">
+        <div class="stat-card blue">
+          <div class="stat-icon blue"><i class="bi bi-buildings-fill"></i></div>
+          <div class="stat-value">${dewanAktif}</div>
+          <div class="stat-label">Dewan Aktif</div>
+          <div class="stat-sub">${DEWAN.filter(d=>d.status==='Bersedia').length} dewan bersedia</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card green">
+          <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-value">${totalCalon}</div>
+          <div class="stat-label">Calon Hadir (Pagi)</div>
+          <div class="stat-sub">${DEWAN.filter(d=>d.status==='Aktif').reduce((a,d)=>a+d.calonDaftar,0)} calon didaftar</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card yellow">
+          <div class="stat-icon yellow"><i class="bi bi-person-badge-fill"></i></div>
+          <div class="stat-value">${PENGAWAS.length}</div>
+          <div class="stat-label">Pengawas Berdaftar</div>
+          <div class="stat-sub">${pengAwas} bertugas hari ini</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card red">
+          <div class="stat-icon red"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="stat-value">${insidenAktif}</div>
+          <div class="stat-label">Insiden Aktif</div>
+          <div class="stat-sub">${INSIDEN.filter(i=>i.status==='Selesai').length} selesai diuruskan</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header-custom">
+            <span><i class="bi bi-calendar3 me-2"></i>Kalender Peperiksaan — Januari 2025</span>
+          </div>
+          <div class="p-3">
+            <div class="cal-grid mb-1" id="cal-labels">${calHtml.substring(0, calHtml.indexOf('<div class="cal-day'))}</div>
+            <div class="cal-grid" id="cal-days"></div>
+            <div id="cal-container" class="cal-grid">${calHtml}</div>
+            <div class="mt-3 d-flex gap-3" style="font-size:11px;">
+              <span><span class="cal-day has-exam d-inline-block" style="padding:2px 8px;">6</span> Ada Peperiksaan</span>
+              <span><span class="cal-day today d-inline-block" style="padding:2px 8px;">6</span> Hari Ini</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card">
+          <div class="card-header-custom">
+            <span><i class="bi bi-bell-fill me-2"></i>Peperiksaan Akan Datang</span>
+          </div>
+          <div>${upcoming}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header-custom">
+        <span><i class="bi bi-bar-chart-fill me-2"></i>Kapasiti & Status Dewan</span>
+      </div>
+      <div class="p-4">${dewanBars}</div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: PEMANTAUAN DEWAN
+// ══════════════════════════════════════════════════════════
+
+// Countdown simulation: for "Aktif" halls, we simulate time remaining
+// Using a fixed base of 180 minutes minus elapsed mock minutes
+let countdownBase = {};
+DEWAN.forEach(d => {
+  if (d.status === 'Aktif') {
+    // mock: Dewan 1 has ~65 min left, Dewan 2 has ~43 min left
+    countdownBase[d.id] = d.id === 'D1' ? 65 * 60 : 43 * 60;
+  }
+});
+
+function formatCountdown(secs) {
+  if (secs <= 0) return "00:00:00";
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function renderDewan() {
+  const cards = DEWAN.map(d => {
+    const pct = d.calonDaftar > 0 ? Math.round(d.calonHadir / d.calonDaftar * 100) : 0;
+    const progCol = pct >= 95 ? '#3fb950' : pct >= 80 ? '#d29922' : '#f85149';
+    const isAktif = d.status === 'Aktif';
+    const isSelesai = d.status === 'Selesai';
+
+    const countdownHtml = isAktif
+      ? `<div class="countdown" id="cd-${d.id}">${formatCountdown(countdownBase[d.id] || 0)}</div>
+         <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;">masa berbaki</div>`
+      : isSelesai
+        ? `<div class="countdown off"><i class="bi bi-check-circle-fill text-success"></i> Selesai</div>`
+        : `<div class="countdown off"><i class="bi bi-clock me-1"></i>${d.masaMula}</div>
+           <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:2px;">masa mula</div>`;
+
+    return `
+    <div class="col-md-4">
+      <div class="dewan-card ${d.status.toLowerCase()}">
+        <div class="dewan-card-header">
+          <div>
+            <div class="dewan-name">${d.nama}</div>
+            <div class="dewan-subjek">${d.kod} · ${d.subjek}</div>
+          </div>
+          ${statusBadge(d.status)}
+        </div>
+
+        <div class="text-center py-2 mb-2" style="border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+          ${countdownHtml}
+        </div>
+
+        ${isAktif || isSelesai ? `
+        <div class="mb-2">
+          <div class="d-flex justify-content-between mb-1" style="font-size:12px;">
+            <span style="color:var(--muted);">Kehadiran</span>
+            <span>${d.calonHadir} / ${d.calonDaftar} (${pct}%)</span>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" style="width:${pct}%;background:${progCol};"></div>
+          </div>
+        </div>` : `
+        <div class="mb-2" style="font-size:12px;color:var(--muted);">
+          <i class="bi bi-people me-1"></i>${d.calonDaftar} calon didaftar
+        </div>`}
+
+        <div class="dewan-meta">
+          <span><i class="bi bi-clock"></i>${d.masaMula} — ${d.masaTamat}</span>
+          <span><i class="bi bi-geo-alt"></i>${d.blok} · Kapasiti ${d.kapasiti}</span>
+          <span><i class="bi bi-person-badge"></i>${getNamaPengawas(d.pk).split(' ').slice(0,3).join(' ')}</span>
+        </div>
+
+        <button class="btn btn-sm w-100 mt-3"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);"
+          onclick="bukaDewanModal('${d.id}')">
+          <i class="bi bi-info-circle me-1"></i>Lihat Butiran
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('page-dewan').innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h5 class="mb-1" style="font-weight:700;">Pemantauan Dewan Masa Nyata</h5>
+        <div style="font-size:12px;color:var(--muted);"><span class="live-dot"></span>Data dikemaskini setiap saat</div>
+      </div>
+      <div class="d-flex gap-2">
+        <span class="badge-custom badge-green"><i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Aktif</span>
+        <span class="badge-custom badge-blue"><i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Bersedia</span>
+        <span class="badge-custom badge-gray"><i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Selesai</span>
+      </div>
+    </div>
+    <div class="row g-3">${cards}</div>
+  `;
+}
+
+function bukaDewanModal(id) {
+  const d = DEWAN.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('modal-dewan-title').innerHTML = `<i class="bi bi-buildings me-2"></i>${d.nama} — ${d.subjek}`;
+  document.getElementById('modal-dewan-body').innerHTML = `
+    <div class="row g-3">
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Kod Subjek</div><div style="font-weight:700;">${d.kod}</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Status</div>${statusBadge(d.status)}</div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Masa</div><div>${d.masaMula} — ${d.masaTamat}</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Blok / Jenis</div><div>${d.blok} · ${d.jenis}</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Calon Daftar</div><div>${d.calonDaftar}</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Calon Hadir</div><div>${d.calonHadir} (${d.calonDaftar>0?Math.round(d.calonHadir/d.calonDaftar*100):0}%)</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Pengawas Ketua</div><div>${getNamaPengawas(d.pk)}</div></div>
+      <div class="col-6"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Pengawas 2</div><div>${getNamaPengawas(d.p2)}</div></div>
+      <div class="col-12">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">% Kehadiran</div>
+        <div class="progress" style="height:10px;">
+          <div class="progress-bar bg-success" style="width:${d.calonDaftar>0?Math.round(d.calonHadir/d.calonDaftar*100):0}%;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  new bootstrap.Modal(document.getElementById('modalDewan')).show();
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: PENGAWAS
+// ══════════════════════════════════════════════════════════
+
+function renderPengawas(data) {
+  data = data || PENGAWAS;
+  const cards = data.map(p => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? '#f85149' : pct > 50 ? '#d29922' : '#3fb950';
+    const initials = getInitials(p.nama);
+    return `
+    <div class="col-md-4">
+      <div class="pengawas-card">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="pengawas-avatar">${initials}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px;">${p.nama}</div>
+            <div style="font-size:11px;color:var(--muted);">${p.id} · ${p.jabatan}</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between mb-1" style="font-size:12px;">
+          <span style="color:var(--muted);">Beban Tugasan</span>
+          <span>${p.tugasan} sesi</span>
+        </div>
+        <div class="progress mb-2">
+          <div class="progress-bar" style="width:${pct}%;background:${col};"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          ${statusBadge(p.status)}
+          <span style="font-size:11px;color:var(--muted);">Beban: ${pct}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const rows = data.map((p, i) => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? '#f85149' : pct > 50 ? '#d29922' : '#3fb950';
+    const lbl = pct > 70 ? 'badge-red' : pct > 50 ? 'badge-yellow' : 'badge-green';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-weight:600;">${p.nama}</td>
+      <td style="color:var(--muted);">${p.jabatan}</td>
+      <td>${p.tugasan}</td>
+      <td style="width:160px;">
+        <div class="progress"><div class="progress-bar" style="width:${pct}%;background:${col};"></div></div>
+      </td>
+      <td><span class="badge-custom ${lbl}">${pct > 70 ? 'Tinggi' : pct > 50 ? 'Sederhana' : 'Rendah'}</span></td>
+      <td>${statusBadge(p.status)}</td>
+    </tr>`;
+  }).join('');
+
+  const jabatanList = [...new Set(PENGAWAS.map(p => p.jabatan))];
+  const jabatanOptions = jabatanList.map(j => `<option>${j}</option>`).join('');
+
+  document.getElementById('page-pengawas').innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 style="font-weight:700;margin:0;">Senarai Pengawas Peperiksaan</h5>
+      <button class="btn btn-primary btn-sm"><i class="bi bi-person-plus-fill me-1"></i>Daftarkan Pengawas</button>
+    </div>
+
+    <div class="row g-3 mb-4">${cards}</div>
+
+    <div class="card">
+      <div class="card-header-custom">
+        <span><i class="bi bi-table me-2"></i>Ringkasan Beban Tugasan</span>
+        <div class="d-flex gap-2">
+          <input class="form-control form-control-sm" id="cari-pengawas" placeholder="Cari nama..." style="width:180px;" oninput="filterPengawas()" />
+          <select class="form-select form-select-sm" id="filter-jabatan" style="width:200px;" onchange="filterPengawas()">
+            <option value="">Semua Jabatan</option>
+            ${jabatanOptions}
+          </select>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" id="pengawas-table">
+          <thead>
+            <tr>
+              <th>Bil</th><th>Nama</th><th>Jabatan</th><th>Tugasan</th><th>% Beban</th><th>Tahap</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="pengawas-tbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function filterPengawas() {
+  const q = (document.getElementById('cari-pengawas')?.value || '').toLowerCase();
+  const j = document.getElementById('filter-jabatan')?.value || '';
+  const filtered = PENGAWAS.filter(p => {
+    const matchQ = !q || p.nama.toLowerCase().includes(q);
+    const matchJ = !j || p.jabatan === j;
+    return matchQ && matchJ;
+  });
+  const rows = filtered.map((p, i) => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? '#f85149' : pct > 50 ? '#d29922' : '#3fb950';
+    const lbl = pct > 70 ? 'badge-red' : pct > 50 ? 'badge-yellow' : 'badge-green';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-weight:600;">${p.nama}</td>
+      <td style="color:var(--muted);">${p.jabatan}</td>
+      <td>${p.tugasan}</td>
+      <td style="width:160px;"><div class="progress"><div class="progress-bar" style="width:${pct}%;background:${col};"></div></div></td>
+      <td><span class="badge-custom ${lbl}">${pct > 70 ? 'Tinggi' : pct > 50 ? 'Sederhana' : 'Rendah'}</span></td>
+      <td>${statusBadge(p.status)}</td>
+    </tr>`;
+  }).join('');
+  const tbody = document.getElementById('pengawas-tbody');
+  if (tbody) tbody.innerHTML = rows;
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: INSIDEN
+// ══════════════════════════════════════════════════════════
+
+function renderInsiden() {
+  const jumlah = INSIDEN.length;
+  const belumSelesai = INSIDEN.filter(i => i.status === 'Baru').length;
+  const semakan = INSIDEN.filter(i => i.status === 'Dalam Semakan').length;
+  const selesai = INSIDEN.filter(i => i.status === 'Selesai').length;
+
+  const rows = INSIDEN.map((ins, i) => `
+    <tr>
+      <td style="font-size:11px;color:var(--muted);">${ins.id}</td>
+      <td style="font-size:12px;white-space:nowrap;">${ins.masa}</td>
+      <td style="font-weight:600;">${ins.dewan}</td>
+      <td>${insideBadge(ins.kategori)}</td>
+      <td style="font-size:12px;max-width:260px;">${ins.penerangan}</td>
+      <td style="font-size:12px;color:var(--muted);">${ins.pelapor}</td>
+      <td>${statusBadge(ins.status)}</td>
+      <td>
+        ${ins.status !== 'Selesai' ? `<button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;" onclick="selesaikanInsiden(${i})"><i class="bi bi-check2-circle me-1"></i>Selesai</button>` : '<span style="font-size:11px;color:var(--muted);">—</span>'}
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('page-insiden').innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 style="font-weight:700;margin:0;">Pengurusan Insiden</h5>
+      <button class="btn btn-danger btn-sm" onclick="bukaModalInsiden()">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Log Insiden Baharu
+      </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-3"><div class="insiden-stat"><div class="num">${jumlah}</div><div class="lbl">Jumlah Insiden</div></div></div>
+      <div class="col-3"><div class="insiden-stat"><div class="num text-danger">${belumSelesai}</div><div class="lbl">Baru / Belum Diambil Tindakan</div></div></div>
+      <div class="col-3"><div class="insiden-stat"><div class="num text-warning">${semakan}</div><div class="lbl">Dalam Semakan</div></div></div>
+      <div class="col-3"><div class="insiden-stat"><div class="num text-success">${selesai}</div><div class="lbl">Selesai Diuruskan</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-custom">
+        <span><i class="bi bi-list-ul me-2"></i>Log Insiden</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>ID</th><th>Masa</th><th>Dewan</th><th>Kategori</th><th>Penerangan</th><th>Pelapor</th><th>Status</th><th>Tindakan</th>
+            </tr>
+          </thead>
+          <tbody id="insiden-tbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function selesaikanInsiden(idx) {
+  INSIDEN[idx].status = 'Selesai';
+  renderInsiden();
+}
+
+function bukaModalInsiden() {
+  const sel = document.getElementById('ins-dewan');
+  sel.innerHTML = DEWAN.map(d => `<option>${d.nama}</option>`).join('');
+  new bootstrap.Modal(document.getElementById('modalInsiden')).show();
+}
+
+function submitInsiden() {
+  const dewan = document.getElementById('ins-dewan').value;
+  const kategori = document.getElementById('ins-kategori').value;
+  const penerangan = document.getElementById('ins-penerangan').value.trim();
+  const pelapor = document.getElementById('ins-pelapor').value.trim();
+  if (!penerangan || !pelapor) { alert('Sila lengkapkan semua maklumat.'); return; }
+
+  const now = new Date();
+  const masa = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const id = `I${String(INSIDEN.length + 1).padStart(3,'0')}`;
+  INSIDEN.push({ id, masa, dewan, kategori, penerangan, pelapor, status: 'Baru' });
+
+  bootstrap.Modal.getInstance(document.getElementById('modalInsiden')).hide();
+  document.getElementById('ins-penerangan').value = '';
+  document.getElementById('ins-pelapor').value = '';
+  renderInsiden();
+  showPage('insiden', document.querySelector('.nav-item:nth-child(5)'));
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: JADUAL
+// ══════════════════════════════════════════════════════════
+
+function renderJadual(data) {
+  data = data || JADUAL;
+  const rows = data.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted);">${i+1}</td>
+      <td><code style="background:var(--surface2);padding:2px 7px;border-radius:4px;font-size:11px;color:var(--info);">${r.kod}</code></td>
+      <td style="font-weight:600;">${r.subjek}</td>
+      <td style="white-space:nowrap;">${r.tarikh}</td>
+      <td>${r.hari}</td>
+      <td><span class="badge-custom ${r.masa==='Pagi'?'badge-blue':'badge-orange'}">${r.masa==='Pagi'?'🌅 Pagi':'🌇 Petang'}</span></td>
+      <td>${r.dewan}</td>
+      <td style="font-size:12px;">${getNamaPengawas(r.pk).split(' ').slice(0,3).join(' ')}</td>
+      <td style="font-size:12px;">${getNamaPengawas(r.p2).split(' ').slice(0,3).join(' ')}</td>
+      <td>${r.pelajar}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td><button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;"><i class="bi bi-pencil-fill"></i></button></td>
+    </tr>`).join('');
+
+  document.getElementById('page-jadual').innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 style="font-weight:700;margin:0;">Jadual Peperiksaan</h5>
+      <button class="btn btn-primary btn-sm" onclick="bukaModalJadual()">
+        <i class="bi bi-plus-circle-fill me-1"></i>Tambah Peperiksaan
+      </button>
+    </div>
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" class="form-control form-control-sm" id="cari-jadual" placeholder="🔍  Cari subjek / kod..." oninput="filterJadual()" style="width:220px;" />
+        <select class="form-select form-select-sm" id="filter-hari" onchange="filterJadual()" style="width:140px;">
+          <option value="">Semua Hari</option>
+          <option>Isnin</option><option>Selasa</option><option>Rabu</option><option>Khamis</option><option>Jumaat</option>
+        </select>
+        <select class="form-select form-select-sm" id="filter-sesi" onchange="filterJadual()" style="width:140px;">
+          <option value="">Semua Sesi</option>
+          <option>Pagi</option><option>Petang</option>
+        </select>
+        <select class="form-select form-select-sm" id="filter-status" onchange="filterJadual()" style="width:140px;">
+          <option value="">Semua Status</option>
+          <option>Sahih</option><option>Konflik</option><option>Draf</option>
+        </select>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto;" id="jadual-count">${JADUAL.length} rekod</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Bil</th><th>Kod</th><th>Subjek</th><th>Tarikh</th><th>Hari</th><th>Sesi</th><th>Dewan</th><th>P. Ketua</th><th>P. 2</th><th>Pelajar</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="jadual-tbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function filterJadual() {
+  const q = (document.getElementById('cari-jadual')?.value || '').toLowerCase();
+  const hari = document.getElementById('filter-hari')?.value || '';
+  const sesi = document.getElementById('filter-sesi')?.value || '';
+  const status = document.getElementById('filter-status')?.value || '';
+  const filtered = JADUAL.filter(r => {
+    return (!q || r.kod.toLowerCase().includes(q) || r.subjek.toLowerCase().includes(q))
+      && (!hari || r.hari === hari)
+      && (!sesi || r.masa === sesi)
+      && (!status || r.status === status);
+  });
+  const rows = filtered.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted);">${i+1}</td>
+      <td><code style="background:var(--surface2);padding:2px 7px;border-radius:4px;font-size:11px;color:var(--info);">${r.kod}</code></td>
+      <td style="font-weight:600;">${r.subjek}</td>
+      <td style="white-space:nowrap;">${r.tarikh}</td>
+      <td>${r.hari}</td>
+      <td><span class="badge-custom ${r.masa==='Pagi'?'badge-blue':'badge-orange'}">${r.masa==='Pagi'?'🌅 Pagi':'🌇 Petang'}</span></td>
+      <td>${r.dewan}</td>
+      <td style="font-size:12px;">${getNamaPengawas(r.pk).split(' ').slice(0,3).join(' ')}</td>
+      <td style="font-size:12px;">${getNamaPengawas(r.p2).split(' ').slice(0,3).join(' ')}</td>
+      <td>${r.pelajar}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td><button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;"><i class="bi bi-pencil-fill"></i></button></td>
+    </tr>`).join('');
+  const tbody = document.getElementById('jadual-tbody');
+  if (tbody) tbody.innerHTML = rows;
+  const cnt = document.getElementById('jadual-count');
+  if (cnt) cnt.textContent = `${filtered.length} rekod`;
+}
+
+function bukaModalJadual() {
+  const dewanSel = document.getElementById('jad-dewan');
+  const pkSel = document.getElementById('jad-pk');
+  const p2Sel = document.getElementById('jad-p2');
+  dewanSel.innerHTML = DEWAN.map(d => `<option>${d.nama}</option>`).join('');
+  pkSel.innerHTML = PENGAWAS.map(p => `<option value="${p.id}">${p.nama}</option>`).join('');
+  p2Sel.innerHTML = PENGAWAS.map(p => `<option value="${p.id}">${p.nama}</option>`).join('');
+  new bootstrap.Modal(document.getElementById('modalJadual')).show();
+}
+
+function submitJadual() {
+  const kod = document.getElementById('jad-kod').value.trim();
+  const subjek = document.getElementById('jad-subjek').value.trim();
+  const tarikh = document.getElementById('jad-tarikh').value;
+  const pelajar = parseInt(document.getElementById('jad-pelajar').value) || 0;
+  if (!kod || !subjek || !tarikh) { alert('Sila lengkapkan Kod, Nama Subjek, dan Tarikh.'); return; }
+
+  const hariArr = ['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
+  const hari = hariArr[new Date(tarikh).getDay()];
+  JADUAL.push({
+    kod, subjek, tarikh, hari,
+    masa: document.getElementById('jad-masa').value,
+    dewan: document.getElementById('jad-dewan').value,
+    pk: document.getElementById('jad-pk').value,
+    p2: document.getElementById('jad-p2').value,
+    pelajar, status: 'Draf'
+  });
+  bootstrap.Modal.getInstance(document.getElementById('modalJadual')).hide();
+  renderJadual(JADUAL);
+  showPage('jadual', document.querySelector('.nav-item[onclick*="jadual"]'));
+}
+
+// ══════════════════════════════════════════════════════════
+// PAGE: LAPORAN
+// ══════════════════════════════════════════════════════════
+
+let chartInstances = {};
+
+function renderLaporan() {
+  const totalPelajar = JADUAL.reduce((a,r) => a + r.pelajar, 0);
+  const sesiPagi = JADUAL.filter(r => r.masa === 'Pagi').length;
+  const sesiPetang = JADUAL.filter(r => r.masa === 'Petang').length;
+
+  const rows = PENGAWAS.map((p, i) => {
+    const pct = Math.min(100, Math.round(p.tugasan / 7 * 100));
+    const col = pct > 70 ? '#f85149' : pct > 50 ? '#d29922' : '#3fb950';
+    const lbl = pct > 70 ? 'badge-red' : pct > 50 ? 'badge-yellow' : 'badge-green';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="font-weight:600;">${p.nama}</td>
+      <td style="color:var(--muted);">${p.jabatan}</td>
+      <td>${p.tugasan}</td>
+      <td style="width:160px;"><div class="progress"><div class="progress-bar" style="width:${pct}%;background:${col};"></div></div></td>
+      <td><span class="badge-custom ${lbl}">${pct > 70 ? 'Tinggi' : pct > 50 ? 'Sederhana' : 'Rendah'}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('page-laporan').innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 style="font-weight:700;margin:0;">Laporan & Analitik</h5>
+      <button class="btn btn-secondary btn-sm" onclick="window.print()">
+        <i class="bi bi-printer-fill me-1"></i>Cetak Laporan
+      </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-3">
+        <div class="stat-card blue">
+          <div class="stat-icon blue"><i class="bi bi-clipboard2-check-fill"></i></div>
+          <div class="stat-value">${JADUAL.length}</div>
+          <div class="stat-label">Subjek Diperiksa</div>
+          <div class="stat-sub">Sem 2 · 2024/2025</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card green">
+          <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-value">${totalPelajar.toLocaleString()}</div>
+          <div class="stat-label">Jumlah Calon (Anggaran)</div>
+          <div class="stat-sub">Semua sesi digabung</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card yellow">
+          <div class="stat-icon yellow"><i class="bi bi-sunrise-fill"></i></div>
+          <div class="stat-value">${sesiPagi}</div>
+          <div class="stat-label">Sesi Pagi</div>
+          <div class="stat-sub">8:00 am — 11:00 am</div>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="stat-card red">
+          <div class="stat-icon red"><i class="bi bi-sunset-fill"></i></div>
+          <div class="stat-value">${sesiPetang}</div>
+          <div class="stat-label">Sesi Petang</div>
+          <div class="stat-sub">2:30 pm — 5:30 pm</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-5">
+        <div class="card h-100">
+          <div class="card-header-custom"><span><i class="bi bi-pie-chart-fill me-2"></i>Agihan Status Peperiksaan</span></div>
+          <div class="p-4 chart-container" style="height:260px;">
+            <canvas id="chart-status"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-7">
+        <div class="card h-100">
+          <div class="card-header-custom"><span><i class="bi bi-bar-chart-fill me-2"></i>Peperiksaan Mengikut Hari</span></div>
+          <div class="p-4 chart-container" style="height:260px;">
+            <canvas id="chart-hari"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-custom">
+        <span><i class="bi bi-person-lines-fill me-2"></i>Beban Tugasan Pengawas</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Bil</th><th>Nama</th><th>Jabatan</th><th>Tugasan</th><th>% Beban</th><th>Tahap</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Render charts after DOM is ready
+  setTimeout(() => {
+    // Destroy existing
+    if (chartInstances['status']) chartInstances['status'].destroy();
+    if (chartInstances['hari']) chartInstances['hari'].destroy();
+
+    const statusCount = { Sahih: 0, Konflik: 0, Draf: 0 };
+    JADUAL.forEach(j => { if (statusCount[j.status] !== undefined) statusCount[j.status]++; });
+
+    chartInstances['status'] = new Chart(document.getElementById('chart-status'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Sahih', 'Konflik', 'Draf'],
+        datasets: [{ data: [statusCount.Sahih, statusCount.Konflik, statusCount.Draf], backgroundColor: ['#3fb950','#f85149','#8b949e'], borderWidth: 2, borderColor: '#161b22' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#8b949e', font: { size: 12 } } }
+        }
+      }
+    });
+
+    const hariArr = ['Isnin','Selasa','Rabu','Khamis','Jumaat'];
+    const hariCount = hariArr.map(h => JADUAL.filter(j => j.hari === h).length);
+
+    chartInstances['hari'] = new Chart(document.getElementById('chart-hari'), {
+      type: 'bar',
+      data: {
+        labels: hariArr,
+        datasets: [{
+          label: 'Bilangan Peperiksaan',
+          data: hariCount,
+          backgroundColor: 'rgba(47,129,247,0.6)',
+          borderColor: '#2f81f7',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8b949e' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#8b949e', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+        }
+      }
+    });
+  }, 50);
+}
+
+// ══════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════
+
+const PAGE_CONFIG = {
+  dashboard: { title: '<i class="bi bi-grid-1x2-fill me-2"></i>Dashboard Peperiksaan', render: renderDashboard },
+  dewan:     { title: '<i class="bi bi-broadcast me-2"></i>Pemantauan Dewan',          render: renderDewan },
+  pengawas:  { title: '<i class="bi bi-people-fill me-2"></i>Senarai Pengawas',        render: renderPengawas },
+  insiden:   { title: '<i class="bi bi-exclamation-triangle-fill me-2"></i>Pengurusan Insiden', render: renderInsiden },
+  jadual:    { title: '<i class="bi bi-calendar3 me-2"></i>Jadual Peperiksaan',        render: renderJadual },
+  laporan:   { title: '<i class="bi bi-bar-chart-fill me-2"></i>Laporan & Analitik',   render: renderLaporan },
+};
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').innerHTML = PAGE_CONFIG[id].title;
+  PAGE_CONFIG[id].render();
+}
+
+// ══════════════════════════════════════════════════════════
+// CLOCK & COUNTDOWN TICKER
+// ══════════════════════════════════════════════════════════
+
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const el = document.getElementById('clock-display');
+  if (el) el.textContent = `${hh}:${mm}:${ss}`;
+}
+
+function updateCountdowns() {
+  DEWAN.forEach(d => {
+    if (d.status !== 'Aktif') return;
+    if (countdownBase[d.id] > 0) countdownBase[d.id]--;
+    const el = document.getElementById('cd-' + d.id);
+    if (!el) return;
+    const secs = countdownBase[d.id];
+    el.textContent = formatCountdown(secs);
+    el.className = 'countdown';
+    if (secs <= 300) el.classList.add('danger');
+    else if (secs <= 1800) el.classList.add('warning');
+  });
+}
+
+setInterval(() => { updateClock(); updateCountdowns(); }, 1000);
+updateClock();
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+renderDashboard();
+</script>
+</body>
+</html>
